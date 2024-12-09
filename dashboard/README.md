@@ -56,7 +56,7 @@ kubectl apply -f dashboard-clusterrolebinding.yaml
 ### 7. Retrieve the Token
 Get the access token for the Service Account:
 ```bash
-kubectl get secret dashboard-user-token -n kubernetes-dashboard -o jsonpath={.data.token} | base64 --decode
+kubectl get secret dashboard-user-token -n kubernetes-dashboard -o jsonpath={.data.token} | base64 --decode > secret.txt
 ```
 
 ---
