@@ -1,8 +1,15 @@
 # Todo List Application - Full Stack Deployment Guide
 
-This guide provides step-by-step instructions to deploy a complete Todo List application with a microservices architecture, including:
-- **Frontend**: React
+Cette application Todo List est une application full-stack avec les fonctionnalités suivantes :
+- **Frontend**: React avec Tailwind CSS
+  - Interface utilisateur moderne et responsive
+  - Pagination des todos
+  - Confirmation de suppression via modal
+  - Formulaire stylisé
 - **API**: FastAPI (RESTful)
+  - Pagination côté serveur
+  - CRUD operations
+  - Validation des données
 - **Database**: PostgreSQL
 
 ---
@@ -10,9 +17,10 @@ This guide provides step-by-step instructions to deploy a complete Todo List app
 ## Prerequisites
 
 - Docker
-- Kubernetes (Minikube or equivalent)
-- `kubectl` configured
+- Kubernetes (Minikube ou équivalent)
+- `kubectl` configuré
 - Git
+- Node.js (pour le développement)
 
 ---
 
@@ -20,9 +28,21 @@ This guide provides step-by-step instructions to deploy a complete Todo List app
 
 ```bash
 labs/
-├── api/       # Backend (FastAPI)
-├── frontend/  # Frontend (React)
-└── k8s/       # Kubernetes Manifests
+├── api/                 # Backend (FastAPI)
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py     # API endpoints
+│   │   ├── models.py   # Database models
+│   │   └── database.py # Database configuration
+│   └── Dockerfile
+├── frontend/           # Frontend (React)
+│   ├── src/
+│   │   ├── App.jsx    # Application principale
+│   │   └── main.jsx   # Point d'entrée
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   └── Dockerfile
+└── k8s/               # Kubernetes Manifests
     ├── namespace.yaml
     ├── postgres/
     ├── api/
@@ -33,136 +53,136 @@ labs/
 
 ## Deployment Steps
 
-### 1. Build Docker Images
+### 1. Configuration de l'environnement
 
-#### 1.1 Build the FastAPI Image
 ```bash
+# Démarrer minikube
+minikube start
+
+# Activer le tunnel minikube (dans un terminal séparé)
+minikube tunnel
+```
+
+### 2. Build Docker Images
+
+#### 2.1 Build l'image FastAPI
+```bash
+eval $(minikube docker-env)
 cd labs/api
 docker build -t todo-api:latest .
 ```
 
-#### 1.2 Build the React Image
+#### 2.2 Build l'image React
 ```bash
 cd ../frontend
-docker build -t todo-frontend:latest .
+./build.sh  # Script qui inclut les variables d'environnement
 ```
 
 ---
 
-### 2. Deploy to Kubernetes
+### 3. Deploy to Kubernetes
 
-#### 2.1 Create the Namespace
+#### 3.1 Create Namespace
 ```bash
 kubectl apply -f labs/k8s/namespace.yaml
 ```
 
-#### 2.2 Deploy PostgreSQL
-Create the resources for PostgreSQL:
+#### 3.2 Deploy PostgreSQL
 ```bash
 kubectl apply -f labs/k8s/postgres/
 ```
 
-#### 2.3 Deploy the API
+#### 3.3 Deploy API
 ```bash
 kubectl apply -f labs/k8s/api/
 ```
 
-#### 2.4 Deploy the Frontend
+#### 3.4 Deploy Frontend
 ```bash
 kubectl apply -f labs/k8s/frontend/
 ```
 
 ---
 
-### 3. Verify Deployment
+### 4. Access the Application
 
-#### Check all resources:
-```bash
-kubectl get all -n todo-app
-```
-
-#### Check Pods:
-```bash
-kubectl get pods -n todo-app
-```
-
-#### Check Services:
-```bash
-kubectl get svc -n todo-app
-```
+L'application est accessible via :
+- **Frontend**: http://localhost:30052
+- **API**: http://localhost:30051
 
 ---
 
-### 4. Access the Application
+## API Endpoints
 
-The application is accessible via:
-- **Frontend**: [http://localhost:30001](http://localhost:30001)
-- **API**: [http://localhost:8000](http://localhost:8000) (direct access if needed)
+### Todos
+- `GET /todos?page=1&limit=5` - Liste paginée des todos
+- `POST /todos` - Créer un nouveau todo
+- `DELETE /todos/{id}` - Supprimer un todo
+
+---
+
+## Frontend Features
+
+1. **Interface utilisateur**
+   - Design moderne avec Tailwind CSS
+   - Formulaire de création intuitif
+   - Table responsive pour l'affichage des todos
+
+2. **Pagination**
+   - Navigation par page
+   - Affichage du nombre total de pages
+   - Limite configurable d'items par page
+
+3. **Interactions utilisateur**
+   - Modal de confirmation pour la suppression
+   - Feedback visuel des actions
+   - Validation des formulaires
 
 ---
 
 ## Monitoring and Logs
 
 ### View Pod Logs
-
-#### Logs for the Frontend:
 ```bash
+# Logs Frontend
 kubectl logs -n todo-app -l app=frontend
-```
 
-#### Logs for the API:
-```bash
+# Logs API
 kubectl logs -n todo-app -l app=fastapi
-```
 
-#### Logs for PostgreSQL:
-```bash
+# Logs PostgreSQL
 kubectl logs -n todo-app -l app=postgres
-```
-
----
-
-### Check Pod Status
-```bash
-kubectl describe pods -n todo-app
 ```
 
 ---
 
 ## Cleanup
 
-To remove the application entirely:
+Pour supprimer l'application :
 ```bash
 kubectl delete namespace todo-app
 ```
 
 ---
 
-## Important Notes
-
-1. **Secrets**: Secrets are encoded in base64. For production, use a secure secrets manager.
-2. **Persistent Volumes**: PersistentVolumeClaims (PVCs) retain data even after restarts.
-3. **NodePort Access**: The application uses NodePort for easier access in development environments.
-
----
-
 ## Troubleshooting
 
-1. **Pods not starting**:
+1. **Problèmes de connexion à l'API**
    ```bash
-   kubectl describe pod <pod-name> -n todo-app
+   kubectl get svc -n todo-app
+   kubectl describe svc fastapi -n todo-app
    ```
 
-2. **Database not accessible**:
+2. **Problèmes de base de données**
    ```bash
    kubectl exec -it <postgres-pod> -n todo-app -- psql -U postgres
    ```
 
-3. **Restarting a deployment**:
+3. **Redémarrage des services**
    ```bash
-   kubectl rollout restart deployment <deployment-name> -n todo-app
+   kubectl rollout restart deployment frontend fastapi -n todo-app
    ```
 
 ---
 
-Happy Developing with the Todo List App! 🚀
+Happy Coding! 🚀
