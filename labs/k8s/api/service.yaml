@@ -8,6 +8,6 @@ spec:
     app: fastapi
   ports:
     - protocol: TCP
-      port: 8000
+      port: 30051
       targetPort: 8000
-  type: ClusterIP 
+  type: LoadBalancer 

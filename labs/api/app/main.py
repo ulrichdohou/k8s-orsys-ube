@@ -1,8 +1,8 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
-from . import models
-from .database import engine, get_db
+from app import models  # Import depuis le package app
+from app.database import engine, get_db  # Import depuis le package app
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,6 +19,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def read_root():
+    return {"status": "healthy"}
+
 class TodoBase(BaseModel):
     title: str
     description: str = None
@@ -31,11 +35,30 @@ class Todo(TodoBase):
     completed: bool
     
     class Config:
-        orm_mode = True
+        from_attributes = True  # Remplace orm_mode = True pour Pydantic v2
 
-@app.get("/todos", response_model=List[Todo])
-def get_todos(db: Session = Depends(get_db)):
-    return db.query(models.Todo).all()
+class PaginatedResponse(BaseModel):
+    items: List[Todo]
+    total: int
+    page: int
+    pages: int
+
+@app.get("/todos", response_model=PaginatedResponse)
+def get_todos(
+    page: int = Query(1, ge=1),
+    limit: int = Query(5, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    offset = (page - 1) * limit
+    total = db.query(models.Todo).count()
+    todos = db.query(models.Todo).offset(offset).limit(limit).all()
+    
+    return {
+        "items": todos,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit
+    }
 
 @app.post("/todos", response_model=Todo)
 def create_todo(todo: TodoCreate, db: Session = Depends(get_db)):

@@ -1,22 +1,23 @@
-# Build stage
-FROM python:3.11-slim as builder
+FROM python:3.11-slim
 
-WORKDIR /app
+WORKDIR /src
 
+# Copier les requirements et installer les dépendances
 COPY app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Production stage
-FROM python:3.11-slim
+# Créer le package app
+RUN mkdir app
 
-WORKDIR /app
+# Copier les fichiers Python dans le package app
+COPY app/*.py app/
 
-# Copy only necessary files from builder
-COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
-COPY app/ .
+# Créer un __init__.py vide
+RUN touch app/__init__.py
 
-# Create non-root user
-RUN adduser --disabled-password --gecos '' appuser
-USER appuser
+# Ajouter des logs et le mode debug
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/src
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 
+# Commande pour démarrer l'application
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"]

@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: todo-frontend:latest  # À remplacer par votre image
+          image: todo-frontend:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 80
           resources:
@@ -25,6 +26,3 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "200m"
-          env:
-            - name: VITE_API_URL
-              value: "http://fastapi:8000"  # URL de l'API dans le cluster 
