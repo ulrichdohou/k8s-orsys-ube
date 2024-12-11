@@ -8,7 +8,6 @@ minikube node add worker-5 --profile=control-plane-1
 
 kubectl get nodes
 
-
 kubectl create deployment nginx --image=nginx --replicas=3
 
 kubectl get deployments
